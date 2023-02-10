@@ -5,6 +5,7 @@
 
 theories/plf/LibTactics.v
 theories/coq_tactical/SimplMatch.v
+theories/MapTactics.v
 theories/Tactics.v
 theories/Prelude.v
 theories/Induction.v

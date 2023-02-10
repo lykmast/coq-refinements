@@ -135,3 +135,132 @@ Ltac my_trivial := first [destructAllRefts;simpl in *; now try lia | lex_resolve
 Ltac test f := match f with f => idtac "yes" | _ => idtac "no" end.
 
 Goal True. set (hey:=2). test hey. *)
+
+
+(* Apply Tactics *)
+
+
+Ltac prop t :=
+  lazymatch t with
+  | fun (x:?X) (y:?Y) (z:?Z) => sig ?p => constr:(fun (x:X) (y:Y) (z:Z) => p)
+  | fun (x:?X) (y:?Y) => sig ?p => constr:(fun (x:X) (y:Y) => p)
+  | fun (x:?X) => sig ?p => constr:(fun (x:X) => p)
+  |  sig ?p  =>  p
+  (* | {v:?X|?p} => constr:(fun (v:X) => p) *)
+  end.
+
+Ltac apply_arg x x' t p :=
+  assert (p (` x)) by (destructAllRefts; smt_infer);
+  set (x' := ltac:(exists (`x); assumption):t).
+
+
+Ltac apply1 tac l x1 :=
+lazymatch type of l with
+| forall (a1:?t1), _ =>
+    let x1' := fresh x1 in
+    let p1:= prop t1 in
+
+    apply_arg x1 x1' t1 p1;
+
+    tac (l x1')
+| ?t => fail "not one argument lemma but" t
+end.
+
+Ltac apply2 tac l x1 x2 :=
+lazymatch type of l with
+| forall (a1:?t1) (a2:?t2), _ =>
+    let x1' := fresh x1 in
+    let x2' := fresh x2 in
+
+    let t2' := constr:(fun a1:t1 => t2) in
+
+    let p1:= prop t1 in
+
+    apply_arg x1 x1' t1 p1;
+
+    let t2'' := constr:(t2' x1') in
+    let p2 := prop t2' in
+    let p2' := constr:(p2 x1') in
+    apply_arg x2 x2' t2'' p2';
+
+    tac (l x1' x2')
+| ?t => fail "not two argument lemma but" t
+end.
+
+Ltac apply3 tac l x1 x2 x3:=
+lazymatch type of l with
+| forall (a1:?t1) (a2:?t2) (a3:?t3), _ =>
+    let x1' := fresh x1 in
+    let x2' := fresh x2 in
+    let x3' := fresh x3 in
+
+    let t2' := constr:(fun a1:t1 => t2) in
+    let t3' := constr:(fun (a1:t1) (a2:(t2' a1)) => t3) in
+
+    let p1:= prop t1 in
+
+    apply_arg x1 x1' t1 p1;
+
+    let t2'' := constr:(t2' x1') in
+    let p2 := prop t2' in
+    let p2' := constr:(p2 x1') in
+    apply_arg x2 x2' t2'' p2';
+
+    let t3'' := constr:(t3' x1' x2') in
+    let p3 := prop t3' in
+    let p3' := constr:(p3 x1' x2') in
+    apply_arg x3 x3' t3'' p3';
+
+    tac (l x1' x2' x3')
+| ?t => fail "not three argument lemma but" t
+end.
+
+Ltac apply4 tac l x1 x2 x3 x4:=
+  lazymatch type of l with
+  forall (a1:?t1) (a2:?t2) (a3:?t3) (a4:?t4), _ =>
+    let x1' := fresh x1 in
+    let x2' := fresh x2 in
+    let x3' := fresh x3 in
+    let x4' := fresh x4 in
+
+    let t2' := constr:(fun a1:t1 => t2) in
+    let t3' := constr:(fun (a1:t1) (a2:(t2' a1)) => t3) in
+    let t4' := constr:(fun (a1:t1) (a2:(t2' a1)) (a3:(t3' a1 a2)) => t4) in
+
+    let p1:= prop t1 in
+
+    apply_arg x1 x1' t1 p1;
+
+    let t2'' := constr:(t2' x1') in
+    let p2 := prop t2' in
+    let p2' := constr:(p2 x1') in
+    apply_arg x2 x2' t2'' p2';
+
+    let t3'' := constr:(t3' x1' x2') in
+    let p3 := prop t3' in
+    let p3' := constr:(p3 x1' x2') in
+    apply_arg x3 x3' t3'' p3';
+
+    let t4'' := constr:(t4' x1' x2' x3') in
+    let p4 := prop t4' in
+    let p4' := constr:(p4 x1' x2' x3') in
+    apply_arg x4 x4' t4'' p4';
+
+    tac (l x1' x2' x3' x4')
+| ?t => fail "not four argument lemma but" t
+end.
+
+
+
+Ltac my_pose_proof H := pose proof H.
+Ltac my_applys H := applys_eq H.
+
+Tactic Notation "reft_apply" constr(l) constr(x1) := apply1 my_applys l x1.
+Tactic Notation "reft_apply" constr(l) constr(x1) constr(x2) := apply2 my_applys l x1 x2.
+Tactic Notation "reft_apply" constr(l) constr(x1) constr(x2) constr(x3) := apply3 my_applys l x1 x2 x3.
+Tactic Notation "reft_apply" constr(l) constr(x1) constr(x2) constr (x3) constr(x4) := apply4 my_applys l x1 x2 x3 x4.
+
+Tactic Notation "reft_pose" constr(l) constr(x1) := apply1 my_pose_proof l x1.
+Tactic Notation "reft_pose" constr(l) constr(x1) constr(x2) := apply2 my_pose_proof l x1 x2.
+Tactic Notation "reft_pose" constr(l) constr(x1) constr(x2) constr(x3) := apply3 my_pose_proof l x1 x2 x3.
+Tactic Notation "reft_pose" constr(l) constr(x1) constr(x2) constr (x3) constr(x4) := apply4 my_pose_proof l x1 x2 x3 x4.
