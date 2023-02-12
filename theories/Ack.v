@@ -128,8 +128,8 @@ intro. intros. apply H. Qed.
 
 
 Theorem ack_plus_one_fst_snd m n : ` (ack (addn1 m) n) >= ` (ack m (addn1 n)).
-  revert m. induction n as [n IHn] using nat_lt_ind.
-  pose (reorder_forall IHn) as ack_plus_one_fst_snd.
+  revert m. induction n as [n ack_plus_one_fst_snd] using nat_lt_ind.
+  (* pose (reorder_forall IHn) as ack_plus_one_fst_snd. *)
   intro m. remember (ack m (addn1 n)) as rhs. simp ack; case_eq (`n) 0; destruct matches. all:try my_trivial.
   + apply eq_ge. rewrite Heqrhs. unfold addn1. my_trivial.
   + rewrite Heqrhs.
@@ -142,13 +142,25 @@ Theorem ack_plus_one_fst_snd m n : ` (ack (addn1 m) n) >= ` (ack m (addn1 n)).
     | now destruct (ack m n)
     ]) .
   set (app3 := ltac:(exists (` (ack m n)); assumption):{v:Z| ` (ack app1 app2) >= v /\ v >= 0}). *)
-  set (ackmn := ack m n).
   Ltac just_pose m := pose m.
-  apply2 just_pose ack nm1 mp1.
-  reft_pose ack_mon_eq_snd m s.
+  apply2 just_pose ack (add m (``1)) (sub n (``1)).
+  apply2 just_pose ack m n.
+  assert (`s >= `s0) by (reft_apply ack_plus_one_fst_snd nm1 m;
+    unfold addn1; try unfold s; try unfold s0;
+    resolve_eq). 
+  reft_pose ack_mon_eq_snd m s s0.
   eapply ge_ge_ge.
-  * applys_eq H1. resolve_eq.
-  * assert (` (ack m n) >= 0) by ( smt_infer).
+  Require Import ProofIrrelevance.
+  * applys_eq H5. unfold addn1; unfold s; unfold app; unfold app0; repeat f_equal. simpl.
+  apply subset_eq_compat.  reft_eq. 
+  Check ack. Check exist. Check subset_eq_compat.
+
+  Search (forall (v x:{_|_}), proj1_sig v = proj1_sig x -> v = x ). 
+  apply eq_sig_hprop. intros. apply proof_irrelevance. simpl; resolve_eq.
+  * reft_pose ack_gt_snd m n.
+    assert (` (ack m n) >= `n+1)
+      by (apply ge_gt; applys_eq H8; resolve_eq). 
+    reft_apply ack_mon_eq_snd m ackmn assert (` (ack m n) >= 0) by ( smt_infer).
     set (app4 := ltac:(exists (` (ack m n)); assumption):Nat).
     assert  ( `app4 >= `n+1 /\ `n +1  >= 0).
     - split.
