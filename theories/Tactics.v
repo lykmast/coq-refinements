@@ -149,15 +149,19 @@ Ltac prop t :=
   (* | {v:?X|?p} => constr:(fun (v:X) => p) *)
   end.
 
+Ltac arg_tac := (* tactic that makes sure argument fits *)
+  destructAllRefts;
+  smt_infer.
+
 Ltac apply_arg x x' t p :=
-  assert (p (` x)) by (destructAllRefts; smt_infer);
+  assert (p (` x)) by arg_tac;
   set (x' := ltac:(exists (`x); assumption):t).
 
 
 Ltac apply1 tac l x1 :=
 lazymatch type of l with
 | forall (a1:?t1), _ =>
-    let x1' := fresh x1 in
+    let x1' := fresh "app" in
     let p1:= prop t1 in
 
     apply_arg x1 x1' t1 p1;
@@ -169,8 +173,8 @@ end.
 Ltac apply2 tac l x1 x2 :=
 lazymatch type of l with
 | forall (a1:?t1) (a2:?t2), _ =>
-    let x1' := fresh x1 in
-    let x2' := fresh x2 in
+    let x1' := fresh "app" in
+    let x2' := fresh "app" in
 
     let t2' := constr:(fun a1:t1 => t2) in
 
@@ -190,9 +194,9 @@ end.
 Ltac apply3 tac l x1 x2 x3:=
 lazymatch type of l with
 | forall (a1:?t1) (a2:?t2) (a3:?t3), _ =>
-    let x1' := fresh x1 in
-    let x2' := fresh x2 in
-    let x3' := fresh x3 in
+    let x1' := fresh "app" in
+    let x2' := fresh "app" in
+    let x3' := fresh "app" in
 
     let t2' := constr:(fun a1:t1 => t2) in
     let t3' := constr:(fun (a1:t1) (a2:(t2' a1)) => t3) in
@@ -218,10 +222,10 @@ end.
 Ltac apply4 tac l x1 x2 x3 x4:=
   lazymatch type of l with
   forall (a1:?t1) (a2:?t2) (a3:?t3) (a4:?t4), _ =>
-    let x1' := fresh x1 in
-    let x2' := fresh x2 in
-    let x3' := fresh x3 in
-    let x4' := fresh x4 in
+    let x1' := fresh "app" in
+    let x2' := fresh "app" in
+    let x3' := fresh "app" in
+    let x4' := fresh "app" in
 
     let t2' := constr:(fun a1:t1 => t2) in
     let t3' := constr:(fun (a1:t1) (a2:(t2' a1)) => t3) in
