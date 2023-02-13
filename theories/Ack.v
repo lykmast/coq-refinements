@@ -9,7 +9,7 @@ Require Import CoqRefinements.Types.
 Require Import ZArith.
 Open Scope Z_scope.
 
-
+Opaque Z.mul.
 (* Ackermann *)
 From Equations Require Import Equations.
 Require Import Coq.ZArith.Zwf.
@@ -73,9 +73,6 @@ Create HintDb ackHintDb.
 Lemma addn1_nat (n:Nat) : ` (add n (`` 1)) >= 0.  my_trivial. Qed.
 Definition addn1 (n:Nat) := exist _ (` (add n (`` 1))) (addn1_nat n):Nat.
 
-#[local] Hint Extern 4 => unfold addn1: ackHintDb.
-#[local] Hint Extern 4 => my_trivial: ackHintDb.
-
 Theorem ack_snd_plus_one (m n: Nat): ` (ack m (addn1 n)) > ` (ack m n).
 Proof.
   remember (ack m n) as rhs. (* freeze rhs *)
@@ -90,7 +87,7 @@ Theorem ack_mon_snd (m n: Nat) (p: {v:Z| `n > v /\ v >= 0}): ` (ack m n) > ` (ac
 Proof.
   revert m p. induction n as [n ack_mon_snd] using nat_lt_ind. intros m p.
   case_eq (`n) (`p+1);  try my_trivial.
-  + reft_apply ack_snd_plus_one m p ; try unfold addn1; my_trivial.
+  + reft_apply ack_snd_plus_one m p ; my_trivial.
   + set (nm1:= (``(`n-1))). reft_pose ack_snd_plus_one m  nm1.
     reft_pose ack_mon_snd nm1 m p.
     eapply gt_gt_gt.
@@ -128,48 +125,115 @@ intro. intros. apply H. Qed.
 
 
 Theorem ack_plus_one_fst_snd m n : ` (ack (addn1 m) n) >= ` (ack m (addn1 n)).
-  revert m. induction n as [n ack_plus_one_fst_snd] using nat_lt_ind.
-  (* pose (reorder_forall IHn) as ack_plus_one_fst_snd. *)
+  revert m. induction n as [n IHn] using nat_lt_ind.
+  pose (reorder_forall IHn) as ack_plus_one_fst_snd.
   intro m. remember (ack m (addn1 n)) as rhs. simp ack; case_eq (`n) 0; destruct matches. all:try my_trivial.
-  + apply eq_ge. rewrite Heqrhs. unfold addn1. my_trivial.
+  + apply eq_ge. rewrite Heqrhs.  my_trivial.
   + rewrite Heqrhs.
 
   set (nm1 := `` (`n-1)).
   set (mp1 := ``(`m + 1)).
-  (* assert (` (ack app1 app2) >= ` (ack m n) /\ ` (ack m n) >= 0)
-    by (split ;
-    [ applys_eq (ack_plus_one_fst_snd m nm1); repeat f_equal; destructAllRefts; apply subset_eq_compat; simpl in *; lia
-    | now destruct (ack m n)
-    ]) .
-  set (app3 := ltac:(exists (` (ack m n)); assumption):{v:Z| ` (ack app1 app2) >= v /\ v >= 0}). *)
+
   Ltac just_pose m := pose m.
   apply2 just_pose ack (add m (``1)) (sub n (``1)).
   apply2 just_pose ack m n.
-  assert (`s >= `s0) by (reft_apply ack_plus_one_fst_snd nm1 m;
-    unfold addn1; try unfold s; try unfold s0;
-    resolve_eq). 
+  assert (`s >= `s0) by (reft_apply ack_plus_one_fst_snd m nm1;
+    my_trivial).
   reft_pose ack_mon_eq_snd m s s0.
   eapply ge_ge_ge.
-  Require Import ProofIrrelevance.
-  * applys_eq H5. unfold addn1; unfold s; unfold app; unfold app0; repeat f_equal. simpl.
-  apply subset_eq_compat.  reft_eq. 
-  Check ack. Check exist. Check subset_eq_compat.
 
-  Search (forall (v x:{_|_}), proj1_sig v = proj1_sig x -> v = x ). 
-  apply eq_sig_hprop. intros. apply proof_irrelevance. simpl; resolve_eq.
-  * reft_pose ack_gt_snd m n.
-    assert (` (ack m n) >= `n+1)
-      by (apply ge_gt; applys_eq H8; resolve_eq). 
-    reft_apply ack_mon_eq_snd m ackmn assert (` (ack m n) >= 0) by ( smt_infer).
-    set (app4 := ltac:(exists (` (ack m n)); assumption):Nat).
-    assert  ( `app4 >= `n+1 /\ `n +1  >= 0).
-    - split.
-      -- apply gt_ge. applys_eq (ack_gt_snd m n).
-      -- smt_infer.
-
-
-    - set (app5 := ltac:( exists (`n + 1); assumption): {v:Z| ` app4 >= v /\ v >= 0}).
-      applys_eq (ack_mon_eq_snd m app4 app5); auto with ackHintDb.
+  * applys_eq H7.
+  my_trivial.
+  (* resolve_eq'. ;easy + solve [apply proof_irrelevance] *)
+  * assert (`s0 >= ` (add n (``1))) by (unfold_locals; apply gt_ge; reft_apply ack_gt_snd m n; my_trivial).
+    reft_apply ack_mon_eq_snd m s0 (add n (``1)); my_trivial.
 Qed.
 
 
+
+Theorem ack_geq_sum m n: ` (ack m n) >= ` (add (add m n) (``1) ).
+  revert m n. induction m as [m ack_geq_sum] using nat_lt_ind.
+  intro n.  case_eq (`m) 0.
+  + simp ack. destruct matches. try my_trivial.
+  + reft_pose ack_plus_one_fst_snd (sub m (``1)) n.
+    reft_pose ack_geq_sum (sub m (``1)) (add n (``1)).
+    eapply ge_ge_ge.
+    * applys_eq H1; my_trivial.
+    * applys_eq H4; my_trivial.
+Qed.
+
+Theorem ack_mon_fst m n (p:{v:Z| v >= 0 /\ `m > v }): ` (ack m n) >= ` (ack ltac:(upcast p) n).
+Proof.
+  revert m n p. induction m as [m ack_mon_fst] using nat_lt_ind. intros n p.
+  case_eq (`m) (` (add p (``1))).
+  + reft_pose ack_plus_one_fst_snd p n.
+    reft_pose ack_mon_eq_snd p (add n (``1)) n.
+    eapply ge_ge_ge.
+    * applys_eq H1; my_trivial.
+    * applys_eq H5; my_trivial.
+  + reft_pose ack_plus_one_fst_snd (sub m (``1)) n.
+    reft_pose ack_mon_eq_snd (sub m (``1)) (add n (``1)) n.
+    reft_pose ack_mon_fst (sub m (``1)) n p.
+    eapply ge_ge_ge.
+    * applys_eq H1; my_trivial.
+    * eapply ge_ge_ge.
+      - applys_eq H5; my_trivial.
+      - applys_eq H9; my_trivial.
+Qed.
+
+
+Lemma add2_nat (n:Nat) : ` (add n (`` 2)) >= 0.  my_trivial. Qed.
+Definition add2 (n:Nat) := exist _ (` (add n (`` 2))) (add2_nat n):Nat.
+
+
+Lemma mul2_nat (n:Nat) : ` (mul n (`` 2)) >= 0.  my_trivial. Qed.
+Definition mul2 (n:Nat) := exist _ (` (mul n (`` 2))) (mul2_nat n):Nat.
+
+Theorem ack_fst_plus_two (m n:Nat) : ` (ack (add2 m) n) > ` (ack m (mul2 n)).
+Proof.
+  revert m. induction n as [n IHn] using nat_lt_ind.
+  pose proof (reorder_forall IHn) as ack_fst_plus_two.
+  intro m.
+  case_eq (`n) 0.
+  + remember  (ack m (mul2 n)) as rhs.
+    simp ack; destruct matches; try my_trivial.
+    simp ack; destruct matches; try my_trivial.
+
+    apply2 just_pose ack m (``1).
+    reft_pose ack_gt_snd m s.
+    reft_pose ack_mon_snd m (``1) (``0).
+    eapply gt_gt_gt.
+    * applys_eq H3. repeat f_equal. unfold_locals. simpl.   my_trivial.
+      unfold_locals. apply eq_sig. simpl. f_equal. set (lhs := ack (exist (fun v : Z => v >= 0) (` m)%prg H)
+      (exist (fun v : Z => v >= 0) 1 H0)).
+      apply2 just_pose ack (add m (``1)) (``0).
+      apply2 just_pose ack m (``1).
+      assert (s0 = s1). unfold s0. simp ack. destruct matches; try my_trivial. unfold_locals. repeat f_equal.  reft_eq'. reft_eq'.
+      applys_eq H12; my_trivial.
+    * rewrite Heqrhs. applys_eq H7;  my_trivial.
+  + remember  (ack m (mul2 n)) as rhs. simp ack; destruct matches; try my_trivial.
+    (* reft_pose ack_fst_plus_two m (sub n (``1)). *)
+    apply2 just_pose ack (add m (``2)) (sub n (``1)).
+    apply2 just_pose ack m (sub ( mul (``2) n) (``2)).
+    assert (`s > `s0) by (reft_apply ack_fst_plus_two m (sub n (``1));
+    my_trivial).
+    reft_pose ack_mon_snd (add m (``1)) s s0.
+    assert (`s0 >= ` (add m (sub ( mul (``2) n) (``1)))) by (
+      reft_apply ack_geq_sum m (sub ( mul (``2) n) (``2)); my_trivial).
+    reft_pose ack_mon_eq_snd (add m (``1)) s0 (add m (sub ( mul (``2) n) (``1))).
+
+    reft_pose ack_mon_eq_snd (add m (``1)) (add m (sub ( mul (``2) n) (``1))) (sub ( mul (``2) n) (``1)).
+    reft_pose ack_plus_one_fst_snd m (sub ( mul (``2) n) (``1)).
+
+    eapply gt_ge_gt.
+    * applys_eq H7; my_trivial.
+    * eapply ge_ge_ge.
+      - applys_eq H12; my_trivial.
+      - eapply ge_ge_ge.
+        ++  applys_eq H16; my_trivial.
+        ++ rewrite Heqrhs. applys_eq H19.
+            -- my_trivial.
+            (* my_trivial (resolve_eq) makes next goal unsolvable
+              :/ *)
+            -- unfold_locals; f_equal; f_equal; reft_eq.
+Qed.
