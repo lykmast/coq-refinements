@@ -15,6 +15,12 @@ Ltac unfold_locals :=
   match goal with
   | x : _ |- _ => progress unfold x
   end.
+
+Lemma eq_sig {A:Type} {P:A -> Prop}:
+forall u v : {a : A | P a}, (` u)%prg = (` v)%prg -> u = v.
+ apply eq_sig_hprop; intros; apply proof_irrelevance.
+Qed.
+
 (* Destruct Refinements *)
 
 Ltac destructRef m :=
@@ -125,7 +131,13 @@ Ltac resolve_eq :=
   repeat f_equal;
   reft_eq.
 
-(* Case split on equality of Zs. *)
+Ltac resolve_eq' := unfold_locals; repeat f_equal;
+  simpl; reft_eq'
+with reft_eq' := destructAllRefts;
+  ((apply subset_eq_compat; simpl in *; lia)
+  + solve [apply proof_irrelevance]
+  + (apply eq_sig; simpl; resolve_eq')).
+  (* Case split on equality of Zs. *)
 Ltac case_eq n1 n2 := destruct (dec (n1 =? n2)).
 
 
@@ -134,7 +146,7 @@ Ltac case_eq n1 n2 := destruct (dec (n1 =? n2)).
     * lex comparison
     * refinement functions equality
 *)
-Ltac my_trivial := first [destructAllRefts;simpl in *; now try lia | lex_resolve | resolve_eq].
+Ltac my_trivial := first [destructAllRefts;simpl in *; now try lia | lex_resolve | resolve_eq'].
 
 (*
 Ltac test f := match f with f => idtac "yes" | _ => idtac "no" end.
