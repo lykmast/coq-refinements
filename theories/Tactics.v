@@ -10,6 +10,11 @@ Require Import Program.Utils. (* for 'dec' *)
 Open Scope Z_scope.
 
 
+Ltac unfold_locals :=
+  repeat
+  match goal with
+  | x : _ |- _ => progress unfold x
+  end.
 (* Destruct Refinements *)
 
 Ltac destructRef m :=
