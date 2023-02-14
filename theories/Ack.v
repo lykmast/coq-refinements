@@ -233,7 +233,17 @@ Proof.
         ++  applys_eq H16; my_trivial.
         ++ rewrite Heqrhs. applys_eq H19.
             -- my_trivial.
-            (* my_trivial (resolve_eq) makes next goal unsolvable
-              :/ *)
-            -- unfold_locals; f_equal; f_equal; reft_eq.
+            (* my_trivial (resolve_eq) cannot solve next goal because f_equal is applied
+                more times than it should i.e. inside mul2 and addn1
+                  (locals defined out of the proof)
+                ===> Stop f_equal from going into ``local'' definitions (How?)
+                ===> Backtrack f_equal if solve fails (Could case infinite loops :/)
+            *)
+            (* if we un*)
+            --  unfold_locals.
+                (* - manually f_equal only as far as necessary. *)
+                f_equal; f_equal; reft_eq. Undo.
+                (* - or, first unfold mul2, addn1 then my_trivial. *)
+                unfold mul2; unfold addn1; my_trivial.
+
 Qed.
