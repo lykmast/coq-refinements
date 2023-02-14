@@ -9,6 +9,7 @@ Require Import CoqRefinements.Types.
 Require Import ZArith.
 Open Scope Z_scope.
 
+Opaque Z.add.
 Opaque Z.mul.
 (* Ackermann *)
 From Equations Require Import Equations.
@@ -104,7 +105,7 @@ Proof.
   + apply gt_ge2. reft_apply ack_mon_snd m n p; resolve_eq.
 Qed.
 
-Check Nat.
+
 (*
 Goal True.
 match type of ack_mon_eq_snd with
@@ -134,9 +135,8 @@ Theorem ack_plus_one_fst_snd m n : ` (ack (addn1 m) n) >= ` (ack m (addn1 n)).
   set (nm1 := `` (`n-1)).
   set (mp1 := ``(`m + 1)).
 
-  Ltac just_pose m := pose m.
-  apply2 just_pose ack (add m (``1)) (sub n (``1)).
-  apply2 just_pose ack m n.
+  reft_set ack (add m (``1)) (sub n (``1)).
+  reft_set ack m n.
   assert (`s >= `s0) by (reft_apply ack_plus_one_fst_snd m nm1;
     my_trivial).
   reft_pose ack_mon_eq_snd m s s0.
@@ -199,22 +199,22 @@ Proof.
     simp ack; destruct matches; try my_trivial.
     simp ack; destruct matches; try my_trivial.
 
-    apply2 just_pose ack m (``1).
+    reft_set ack m (``1).
     reft_pose ack_gt_snd m s.
     reft_pose ack_mon_snd m (``1) (``0).
     eapply gt_gt_gt.
     * applys_eq H3. repeat f_equal. unfold_locals. simpl.   my_trivial.
       unfold_locals. apply eq_sig. simpl. f_equal. set (lhs := ack (exist (fun v : Z => v >= 0) (` m)%prg H)
       (exist (fun v : Z => v >= 0) 1 H0)).
-      apply2 just_pose ack (add m (``1)) (``0).
-      apply2 just_pose ack m (``1).
-      assert (s0 = s1). unfold s0. simp ack. destruct matches; try my_trivial. unfold_locals. repeat f_equal.  reft_eq'. reft_eq'.
+      reft_set ack (add m (``1)) (``0).
+      reft_set ack m (``1).
+      assert (s0 = s1) by (unfold s0; simp ack; destruct matches; my_trivial).
       applys_eq H12; my_trivial.
     * rewrite Heqrhs. applys_eq H7;  my_trivial.
   + remember  (ack m (mul2 n)) as rhs. simp ack; destruct matches; try my_trivial.
     (* reft_pose ack_fst_plus_two m (sub n (``1)). *)
-    apply2 just_pose ack (add m (``2)) (sub n (``1)).
-    apply2 just_pose ack m (sub ( mul (``2) n) (``2)).
+    reft_set ack (add m (``2)) (sub n (``1)).
+    reft_set ack m (sub ( mul (``2) n) (``2)).
     assert (`s > `s0) by (reft_apply ack_fst_plus_two m (sub n (``1));
     my_trivial).
     reft_pose ack_mon_snd (add m (``1)) s s0.

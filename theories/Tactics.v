@@ -217,7 +217,7 @@ Ltac apply4 tac l x1 x2 x3 x4:=
 end.
 
 
-
+Ltac just_pose m := pose m.
 Ltac my_pose_proof H := pose proof H.
 Ltac my_applys H := applys_eq H.
 
@@ -230,3 +230,8 @@ Tactic Notation "reft_pose" constr(l) constr(x1) := apply1 my_pose_proof l x1.
 Tactic Notation "reft_pose" constr(l) constr(x1) constr(x2) := apply2 my_pose_proof l x1 x2.
 Tactic Notation "reft_pose" constr(l) constr(x1) constr(x2) constr(x3) := apply3 my_pose_proof l x1 x2 x3.
 Tactic Notation "reft_pose" constr(l) constr(x1) constr(x2) constr (x3) constr(x4) := apply4 my_pose_proof l x1 x2 x3 x4.
+
+Tactic Notation "reft_set" constr(l) constr(x1) := apply1 just_pose l x1.
+Tactic Notation "reft_set" constr(l) constr(x1) constr(x2) := apply2 just_pose l x1 x2.
+Tactic Notation "reft_set" constr(l) constr(x1) constr(x2) constr(x3) := apply3 just_pose l x1 x2 x3.
+Tactic Notation "reft_set" constr(l) constr(x1) constr(x2) constr (x3) constr(x4) := apply4 just_pose l x1 x2 x3 x4.
