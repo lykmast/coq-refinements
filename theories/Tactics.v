@@ -93,11 +93,6 @@ Ltac case_eq n1 n2 := destruct (dec (n1 =? n2)).
 *)
 Ltac my_trivial := first [destructAllRefts;simpl in *; now try lia | lex_resolve | resolve_eq'].
 
-(*
-Ltac test f := match f with f => idtac "yes" | _ => idtac "no" end.
-
-Goal True. set (hey:=2). test hey. *)
-
 
 (* Apply Tactics *)
 
@@ -108,7 +103,6 @@ Ltac prop t :=
   | fun (x:?X) (y:?Y) => sig ?p => constr:(fun (x:X) (y:Y) => p)
   | fun (x:?X) => sig ?p => constr:(fun (x:X) => p)
   |  sig ?p  =>  p
-  (* | {v:?X|?p} => constr:(fun (v:X) => p) *)
   end.
 
 Ltac arg_tac := (* tactic that makes sure argument fits *)

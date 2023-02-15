@@ -29,8 +29,6 @@ Require Import Program.Utils. (* for 'dec' *)
 Qed.
 
 
-(* Definition test (n:Nat)  *)
-
 Equations? ack (m n:Nat)  : Nat by wf (` m, ` n) (lexprod Z Z (Zwf 0) (Zwf 0)) :=
 ack m n := match dec ( `m =? 0) with
   | left em =>
@@ -60,7 +58,7 @@ case_eq (`n) 0; destruct matches; try my_trivial.
 * eapply gt_ge_gt.
   ++ apply ack_gt_snd; my_trivial.
   ++  applys_eq gt_ge4. (* >= n means > n - 1 *)
-      applys_eq (ack_gt_snd m (ltac:(infer (sub n (``1))))); my_trivial.
+      reft_apply ack_gt_snd m (sub n (``1)); my_trivial.
 Qed.
 
 
@@ -70,7 +68,6 @@ Qed.
   It helps to have it as a separate definition
   because it's easier to case split and unfold ack.
 *)
-Create HintDb ackHintDb.
 Lemma addn1_nat (n:Nat) : ` (add n (`` 1)) >= 0.  my_trivial. Qed.
 Definition addn1 (n:Nat) := exist _ (` (add n (`` 1))) (addn1_nat n):Nat.
 
@@ -80,11 +77,13 @@ Proof.
 simp ack. case_eq (`m) 0; destruct matches; try my_trivial.
 (* destruct matches helps to take into account n+1 /= 0 which helps with unfolding. *)
 + rewrite Heqrhs; simp ack; case_eq (`m) 0; my_trivial.
-+ applys_eq (ack_gt_snd ( ltac:(infer(sub m (``1)))) (ack m n)).
++ reft_set ack m n.
+  reft_apply ack_gt_snd (sub m (``1)) s.
   - my_trivial.
   - rewrite Heqrhs. my_trivial.
 Qed.
-Theorem ack_mon_snd (m n: Nat) (p: {v:Z| `n > v /\ v >= 0}): ` (ack m n) > ` (ack m (ltac:(infer p))).
+
+Theorem ack_mon_snd (m n: Nat) (p: {v:Z| `n > v /\ v >= 0}): ` (ack m n) > ` (ack m (ltac:(upcast p))).
 Proof.
   revert m p. induction n as [n ack_mon_snd] using nat_lt_ind. intros m p.
   case_eq (`n) (`p+1);  try my_trivial.
@@ -98,28 +97,12 @@ Proof.
 Qed.
 
 
-Theorem ack_mon_eq_snd (m:Nat) (n: Nat) (p:{v:Z | `n >= v /\ v >= 0}): ` (ack m n) >= ` (ack m ltac:(infer p)).
+Theorem ack_mon_eq_snd (m:Nat) (n: Nat) (p:{v:Z | `n >= v /\ v >= 0}): ` (ack m n) >= ` (ack m ltac:(upcast p)).
 Proof.
   case_eq (`n) (`p); try my_trivial.
   + apply eq_ge. my_trivial.
   + apply gt_ge2. reft_apply ack_mon_snd m n p; resolve_eq.
 Qed.
-
-
-(*
-Goal True.
-match type of ack_mon_eq_snd with
-  (forall (m:?t2) (n:?t3) (_:?t4), _) => idtac t4
-  | ?t  => idtac t end.
-
-Ltac get_prop x :=
-  match x w
-Lemma test (x:Nat): True.
- match Nat with
-  {v:_| ?P} => set (p := fun v:Z => P)
-  end. *)
-(* Search (sig ?a ?p -> ?a). *)
-(* Ltac inferType x n := assert `x *)
 
 Theorem reorder_forall {A} {B} {P:A -> B -> Prop}: (forall (x:A) (y:B) , P x y) -> forall (y:B) (x:A), P x y.
 intro. intros. apply H. Qed.
@@ -132,19 +115,16 @@ Theorem ack_plus_one_fst_snd m n : ` (ack (addn1 m) n) >= ` (ack m (addn1 n)).
   + apply eq_ge. rewrite Heqrhs.  my_trivial.
   + rewrite Heqrhs.
 
-  set (nm1 := `` (`n-1)).
-  set (mp1 := ``(`m + 1)).
 
   reft_set ack (add m (``1)) (sub n (``1)).
   reft_set ack m n.
-  assert (`s >= `s0) by (reft_apply ack_plus_one_fst_snd m nm1;
+  assert (`s >= `s0) by (reft_apply ack_plus_one_fst_snd m (sub n (``1));
     my_trivial).
   reft_pose ack_mon_eq_snd m s s0.
   eapply ge_ge_ge.
 
   * applys_eq H7.
   my_trivial.
-  (* resolve_eq'. ;easy + solve [apply proof_irrelevance] *)
   * assert (`s0 >= ` (add n (``1))) by (unfold_locals; apply gt_ge; reft_apply ack_gt_snd m n; my_trivial).
     reft_apply ack_mon_eq_snd m s0 (add n (``1)); my_trivial.
 Qed.
@@ -212,7 +192,6 @@ Proof.
       applys_eq H12; my_trivial.
     * rewrite Heqrhs. applys_eq H7;  my_trivial.
   + remember  (ack m (mul2 n)) as rhs. simp ack; destruct matches; try my_trivial.
-    (* reft_pose ack_fst_plus_two m (sub n (``1)). *)
     reft_set ack (add m (``2)) (sub n (``1)).
     reft_set ack m (sub ( mul (``2) n) (``2)).
     assert (`s > `s0) by (reft_apply ack_fst_plus_two m (sub n (``1));
@@ -239,7 +218,6 @@ Proof.
                 ===> Stop f_equal from going into ``local'' definitions (How?)
                 ===> Backtrack f_equal if solve fails (Could case infinite loops :/)
             *)
-            (* if we un*)
             --  unfold_locals.
                 (* - manually f_equal only as far as necessary. *)
                 f_equal; f_equal; reft_eq. Undo.
