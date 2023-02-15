@@ -17,6 +17,14 @@ Ltac unfold_locals :=
   | x : _ |- _ => progress unfold x
   end.
 
+
+Ltac unfold_locals_in H :=
+  repeat
+  match goal with
+  | x : _ |- _ => progress unfold x in H
+  end.
+
+
 Lemma eq_sig {A:Type} {P:A -> Prop}:
 forall u v : {a : A | P a}, (` u)%prg = (` v)%prg -> u = v.
  apply eq_sig_hprop; intros; apply proof_irrelevance.
